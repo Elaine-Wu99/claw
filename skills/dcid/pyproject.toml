@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dcid"
+version = "0.1.0"
+description = "Daily CNBC Intelligence Digest news pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "DCID" }]
+
+[project.scripts]
+dcid = "dcid.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
