@@ -1,0 +1,4 @@
+interface:
+  display_name: "DCID"
+  short_description: "Run the Daily CNBC Intelligence Digest"
+  default_prompt: "Use $dcid to generate today's CNBC intelligence digest."
