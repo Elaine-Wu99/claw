@@ -23,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip OpenAI analysis and render grounded feed summaries.",
     )
+    run.add_argument(
+        "--fetch-full-text",
+        action="store_true",
+        help="Fetch article page text before analysis for deeper paragraph-by-paragraph output.",
+    )
     return parser
 
 
@@ -34,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
         args.category = "all"
         args.model = None
         args.offline_analysis = False
+        args.fetch_full_text = False
 
     if args.command != "run":
         parser.error(f"unknown command: {args.command}")
@@ -41,12 +47,15 @@ def main(argv: list[str] | None = None) -> int:
     config = load_config()
     if args.model:
         config = config.__class__(**{**config.__dict__, "openai_model": args.model})
+    if args.fetch_full_text:
+        config = config.__class__(**{**config.__dict__, "fetch_full_text": True})
 
     result = run_pipeline(config, category=args.category, offline_analysis=args.offline_analysis)
     print(f"report: {result.report_path}")
+    print(f"html report: {result.html_report_path}")
     print(f"raw articles: {result.raw_articles_path}")
+    print(f"raw articles html: {result.raw_articles_html_path}")
     print(f"fetched: {result.fetched_count}")
     print(f"unique: {result.unique_count}")
     print(f"analyzed: {result.analyzed_count}")
     return 0
-

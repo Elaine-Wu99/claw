@@ -13,7 +13,7 @@ CATEGORIES = (CATEGORY_AI, CATEGORY_FINANCE, CATEGORY_OTHER)
 CATEGORY_TITLES = {
     CATEGORY_AI: "AI / Tech",
     CATEGORY_FINANCE: "Finance / Macro",
-    CATEGORY_OTHER: "Other News",
+    CATEGORY_OTHER: "Policy / Market Impact",
 }
 
 
@@ -33,6 +33,15 @@ class Feed:
     default_category: str | None = None
 
 
+@dataclass(frozen=True)
+class InvestmentLens:
+    relevance: str = "Medium"
+    direction: str = "Unclear"
+    scope: str = "Market"
+    tickers: tuple[str, ...] = ()
+    thesis: str = ""
+
+
 @dataclass
 class Article:
     title: str
@@ -47,6 +56,7 @@ class Article:
     classification_confidence: float = 0.0
     score: float = 0.0
     analysis: str = ""
+    investment_lens: InvestmentLens = field(default_factory=InvestmentLens)
 
     @property
     def id(self) -> str:
@@ -76,6 +86,13 @@ class Article:
             "category": self.category,
             "classification_confidence": self.classification_confidence,
             "score": self.score,
+            "investment_lens": {
+                "relevance": self.investment_lens.relevance,
+                "direction": self.investment_lens.direction,
+                "scope": self.investment_lens.scope,
+                "tickers": list(self.investment_lens.tickers),
+                "thesis": self.investment_lens.thesis,
+            },
         }
 
 
@@ -84,4 +101,3 @@ class Classification:
     category: str
     confidence: float
     reason: str
-

@@ -71,11 +71,59 @@ def _render_category(category: str, articles: list[Article]) -> str:
             [
                 f"[Article {index}]",
                 "",
+                _render_investment_lens(article),
+                "",
                 article.analysis or _offline_article_analysis(article),
                 "",
             ]
         )
     return "\n".join(lines).strip()
+
+
+def _render_investment_lens(article: Article) -> str:
+    lens = article.investment_lens
+    tickers = ", ".join(lens.tickers) if lens.tickers else "N/A"
+    return "\n".join(
+        [
+            "## Investment Lens (投资视角)",
+            f"- Investment relevance (投资相关度): {_display_relevance(lens.relevance)}",
+            f"- News tilt, not trading advice (新闻倾向，不是买卖建议): {_display_direction(lens.direction)}",
+            f"- Impact scope (影响范围): {_display_scope(lens.scope)}",
+            f"- Related tickers / ETFs (相关股票 / ETF): {tickers}",
+            f"- Stock-market thesis (股票市场逻辑): {lens.thesis}",
+        ]
+    )
+
+
+def _display_relevance(value: str) -> str:
+    translations = {"High": "高", "Medium": "中", "Low": "低"}
+    return _display_with_translation(value, translations)
+
+
+def _display_direction(value: str) -> str:
+    translations = {
+        "Bullish": "偏正面 / 利好",
+        "Bearish": "偏负面 / 利空",
+        "Mixed": "正负混合",
+        "Unclear": "传导不明确",
+    }
+    return _display_with_translation(value, translations)
+
+
+def _display_scope(value: str) -> str:
+    translations = {
+        "Market": "大盘",
+        "Sector": "板块",
+        "Single stock": "个股",
+    }
+    return _display_with_translation(value, translations)
+
+
+def _display_with_translation(value: str, translations: dict[str, str]) -> str:
+    translation = translations.get(value)
+    if translation is None:
+        return value
+    return f"{value} ({translation})"
 
 
 def _offline_article_analysis(article: Article) -> str:
@@ -100,4 +148,3 @@ The available feed text is preserved above. Run with `OPENAI_API_KEY` for ground
 
 ## CNBC Writing Style Insight
 Offline mode does not infer newsroom style beyond the supplied text."""
-

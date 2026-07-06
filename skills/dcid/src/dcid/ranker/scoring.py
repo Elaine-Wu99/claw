@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from dcid.classifier.rules import AI_KEYWORDS, FINANCE_KEYWORDS
+from dcid.classifier.rules import MARKET_RELEVANCE_KEYWORDS
 from dcid.models import CATEGORIES, Article
 
 
@@ -52,12 +52,10 @@ def _recency_weight(article: Article, now: datetime) -> float:
 
 def _keyword_relevance(article: Article) -> float:
     text = f"{article.title} {article.summary} {article.content}".lower()
-    keywords = AI_KEYWORDS | FINANCE_KEYWORDS
-    return min(2.0, sum(0.2 for keyword in keywords if keyword in text))
+    return min(2.0, sum(0.2 for keyword in MARKET_RELEVANCE_KEYWORDS if keyword in text))
 
 
 def _engagement_proxy(article: Article) -> float:
     title_bonus = min(len(article.title) / 120, 0.5)
     summary_bonus = 0.5 if len(article.summary) >= 120 else 0.0
     return title_bonus + summary_bonus
-

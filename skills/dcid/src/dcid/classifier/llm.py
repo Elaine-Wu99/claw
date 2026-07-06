@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -75,5 +76,18 @@ def _parse_classifier_response(body: dict[str, object]) -> dict[str, object]:
                 for part in content:
                     if isinstance(part, dict) and isinstance(part.get("text"), str):
                         text += part["text"]
-    return json.loads(text.strip())
+    cleaned = _strip_json_fence(text.strip())
+    if not cleaned:
+        raise RuntimeError("OpenAI classifier response did not include text output")
+    try:
+        return json.loads(cleaned)
+    except JSONDecodeError as exc:
+        raise RuntimeError(f"OpenAI classifier returned non-JSON output: {cleaned[:200]}") from exc
 
+
+def _strip_json_fence(text: str) -> str:
+    if text.startswith("```json") and text.endswith("```"):
+        return text.removeprefix("```json").removesuffix("```").strip()
+    if text.startswith("```") and text.endswith("```"):
+        return text.removeprefix("```").removesuffix("```").strip()
+    return text

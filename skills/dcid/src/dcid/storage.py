@@ -32,9 +32,23 @@ def store_raw_articles(articles: list[Article], data_dir: Path, report_date: dat
     return path
 
 
+def store_raw_articles_html(html: str, data_dir: Path, report_date: date) -> Path:
+    data_dir.mkdir(parents=True, exist_ok=True)
+    path = data_dir / "raw" / f"{report_date.isoformat()}.html"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(html, encoding="utf-8")
+    return path
+
+
 def write_report(markdown: str, reports_dir: Path, report_date: date) -> Path:
     reports_dir.mkdir(parents=True, exist_ok=True)
     path = reports_dir / f"{report_date.isoformat()}-dcid.md"
     path.write_text(markdown, encoding="utf-8")
     return path
 
+
+def write_html_report(html: str, reports_dir: Path, report_date: date) -> Path:
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    path = reports_dir / f"{report_date.isoformat()}-dcid.html"
+    path.write_text(html, encoding="utf-8")
+    return path
