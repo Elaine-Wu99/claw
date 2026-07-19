@@ -33,6 +33,16 @@ def _env_flag(name: str, default: bool) -> bool:
 def default_feeds(include_google: bool = False) -> tuple[Feed, ...]:
     cnbc_feeds = (
         Feed(
+            "https://www.cnbc.com/latest/",
+            "CNBC Latest",
+            3.2,
+        ),
+        Feed(
+            "https://www.cnbc.com/",
+            "CNBC Homepage",
+            3.2,
+        ),
+        Feed(
             "https://www.cnbc.com/id/100003114/device/rss/rss.html",
             "CNBC Top News",
             3.0,

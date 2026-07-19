@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timezone
 from html import escape
 
 from dcid.models import CATEGORY_AI, CATEGORY_FINANCE, CATEGORY_OTHER, CATEGORY_TITLES, Article
@@ -70,7 +70,7 @@ def render_raw_articles_html(report_date: date, articles: list[Article]) -> str:
             "<h2>All Raw Articles</h2>",
             '<div class="table-wrap">',
             "<table>",
-            "<thead><tr><th>Title</th><th>Source</th><th>Category</th><th>Score</th><th>Summary</th></tr></thead>",
+            "<thead><tr><th>Title</th><th>Published</th><th>Source</th><th>Category</th><th>Score</th><th>Summary</th></tr></thead>",
             f"<tbody>{rows}</tbody>",
             "</table>",
             "</div>",
@@ -115,6 +115,7 @@ def _render_article(article: Article, index: int) -> str:
             f'<div class="article-index">Article {index}</div>',
             f"<h3>{escape(article.title)}</h3>",
             '<div class="meta">',
+            f"<span>Published {_format_published_at(article)}</span>",
             f"<span>{escape(article.source)}</span>",
             f'<a href="{escape(article.url)}">Open article</a>',
             f"<span>Score {article.score:.2f}</span>",
@@ -167,6 +168,7 @@ def _render_raw_article_row(article: Article) -> str:
     return (
         "<tr>"
         f"<td>{title}</td>"
+        f"<td>{escape(_format_published_at(article))}</td>"
         f"<td>{escape(article.source)}</td>"
         f"<td>{category}</td>"
         f"<td>{article.score:.2f}</td>"
@@ -216,6 +218,15 @@ def _markdown_to_html(markdown: str) -> str:
     if in_list:
         html_lines.append("</ul>")
     return "\n".join(html_lines)
+
+
+def _format_published_at(article: Article) -> str:
+    if article.published_at is None:
+        return "not available"
+    published_at = article.published_at
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+    return published_at.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
 _CSS = """

@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
+import json
+import re
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -15,7 +17,10 @@ def fetch_articles(config: AppConfig) -> list[Article]:
     articles: list[Article] = []
     for feed in config.feeds:
         try:
-            feed_articles = fetch_feed(feed, config.request_timeout_seconds)
+            if _is_cnbc_listing_page(feed.url):
+                feed_articles = fetch_cnbc_listing_page(feed, config.request_timeout_seconds)
+            else:
+                feed_articles = fetch_feed(feed, config.request_timeout_seconds)
         except Exception as exc:
             print(f"warning: failed to fetch {feed.source}: {exc}")
             continue
@@ -39,6 +44,13 @@ def fetch_feed(feed: Feed, timeout_seconds: int) -> list[Article]:
     if root.tag.endswith("feed"):
         return _parse_atom(root, feed)
     return _parse_rss(root, feed)
+
+
+def fetch_cnbc_listing_page(feed: Feed, timeout_seconds: int) -> list[Article]:
+    request = Request(feed.url, headers={"User-Agent": "DCID/0.1 (+https://github.com/)"})
+    with urlopen(request, timeout=timeout_seconds) as response:
+        html = response.read(2_000_000).decode("utf-8", errors="replace")
+    return _parse_cnbc_listing_page(html, feed)
 
 
 def _parse_rss(root: ElementTree.Element, feed: Feed) -> list[Article]:
@@ -102,6 +114,74 @@ def _parse_atom(root: ElementTree.Element, feed: Feed) -> list[Article]:
     return articles
 
 
+def _parse_cnbc_listing_page(html: str, feed: Feed) -> list[Article]:
+    articles: list[Article] = []
+    seen_urls: set[str] = set()
+    for segment in _cnbc_story_segments(html):
+        title_match = re.search(r'"title":"(?P<title>(?:\\.|[^"\\])*)"', segment)
+        url_match = re.search(
+            r'"url":"(?P<url>https:\\u002F\\u002Fwww\.cnbc\.com\\u002F20\d\d\\u002F(?:\\.|[^"\\])*?\.html)"',
+            segment,
+        )
+        published_match = re.search(r'"datePublished":"(?P<published>(?:\\.|[^"\\])*)"', segment)
+        title = _json_string(title_match.group("title")) if title_match else ""
+        url = _json_string(url_match.group("url")) if url_match else ""
+        published_at = (
+            _parse_date(_json_string(published_match.group("published")))
+            if published_match
+            else None
+        )
+        if not title or not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        articles.append(
+            Article(
+                title=title,
+                url=url,
+                source=feed.source,
+                source_weight=feed.source_weight,
+                summary=title,
+                content=title,
+                published_at=published_at,
+                category=feed.default_category,
+            )
+        )
+
+    if articles:
+        return articles
+
+    link_pattern = re.compile(
+        r'<a href="(?P<url>https://www\.cnbc\.com/20\d\d/[^"]+\.html)"[^>]*>.*?'
+        r'<(?:h2|h3|div|span)[^>]*>(?P<title>[^<]+)</(?:h2|h3|div|span)>',
+        re.DOTALL,
+    )
+    for match in link_pattern.finditer(html):
+        title = _clean_summary(match.group("title"))
+        url = unescape(match.group("url"))
+        if title and url not in seen_urls:
+            seen_urls.add(url)
+            articles.append(
+                Article(
+                    title=title,
+                    url=url,
+                    source=feed.source,
+                    source_weight=feed.source_weight,
+                    summary=title,
+                    content=title,
+                    category=feed.default_category,
+                )
+            )
+    return articles
+
+
+def _cnbc_story_segments(html: str) -> list[str]:
+    pattern = re.compile(
+        r'\{"id":\d+.*?"type":"cnbcnewsstory".*?"__typename":"cnbcnewsstory"\}',
+        re.DOTALL,
+    )
+    return [match.group(0) for match in pattern.finditer(html)]
+
+
 def _text(element: ElementTree.Element, tag: str) -> str:
     child = element.find(tag)
     if child is None or child.text is None:
@@ -134,10 +214,23 @@ def _parse_date(value: str) -> datetime | None:
         parsed = parsedate_to_datetime(value)
     except (TypeError, ValueError):
         try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            normalized = value.replace("Z", "+00:00")
+            if re.search(r"[+-]\d{4}$", normalized):
+                normalized = f"{normalized[:-2]}:{normalized[-2:]}"
+            parsed = datetime.fromisoformat(normalized)
         except ValueError:
             return None
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
 
+
+def _json_string(value: str) -> str:
+    try:
+        return json.loads(f'"{value}"')
+    except json.JSONDecodeError:
+        return unescape(value.replace("\\u002F", "/"))
+
+
+def _is_cnbc_listing_page(url: str) -> bool:
+    return url.rstrip("/") in {"https://www.cnbc.com", "https://www.cnbc.com/latest"}

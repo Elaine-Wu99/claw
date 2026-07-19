@@ -10,6 +10,8 @@ class ConfigTests(unittest.TestCase):
 
         self.assertTrue(feeds)
         self.assertTrue(all(feed.source.startswith("CNBC") for feed in feeds))
+        self.assertTrue(any(feed.source == "CNBC Latest" for feed in feeds))
+        self.assertTrue(any(feed.source == "CNBC Homepage" for feed in feeds))
 
     def test_google_feeds_are_opt_in(self):
         feeds = default_feeds(include_google=True)

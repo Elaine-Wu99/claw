@@ -1,6 +1,6 @@
 # DCID - Daily CNBC Intelligence Digest
 
-DCID fetches CNBC RSS news, filters for policy, fiscal, macro, company, and stock-market relevance, classifies articles into AI/Tech, Finance/Macro, and Policy/Market Impact, ranks the top five per category, and generates daily Markdown and HTML intelligence digests with Chinese reading support.
+DCID fetches CNBC's official Latest/Homepage pages plus CNBC RSS news, filters for policy, fiscal, macro, company, and stock-market relevance, classifies articles into AI/Tech, Finance/Macro, and Policy/Market Impact, ranks the top five per category, and generates daily Markdown and HTML intelligence digests with Chinese reading support.
 
 ## Quick Start
 
@@ -41,7 +41,7 @@ Environment variables:
 - `DCID_INCLUDE_GOOGLE`: set to `true` to include Google News RSS fallback sources. Defaults to CNBC-only.
 - `DCID_REPORTS_DIR` / `DCID_DATA_DIR`: override the default `/Users/qiaowenwu/Desktop/新闻report` output folder.
 
-The default feed list is defined in `src/dcid/config.py`. CNBC feeds are used by default; Google News RSS is opt-in to avoid non-CNBC sources such as Yahoo.
+The default source list is defined in `src/dcid/config.py`. CNBC Latest, CNBC Homepage, and CNBC RSS feeds are used by default; Google News RSS is opt-in to avoid non-CNBC sources such as Yahoo.
 
 ## Selection Rules
 

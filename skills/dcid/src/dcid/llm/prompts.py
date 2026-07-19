@@ -31,6 +31,7 @@ Return exactly this structure:
 # {article.title}
 
 Source: {article.source}
+Published: {article.published_at.isoformat() if article.published_at else "not available"}
 URL: {article.url}
 Score: {article.score:.2f}
 

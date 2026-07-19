@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timezone
 
 from dcid.models import CATEGORY_AI, CATEGORY_FINANCE, CATEGORY_OTHER, CATEGORY_TITLES, Article
 
@@ -131,6 +131,7 @@ def _offline_article_analysis(article: Article) -> str:
     return f"""# {article.title}
 
 Source: {article.source}
+Published: {_format_published_at(article)}
 URL: {article.url}
 Score: {article.score:.2f}
 
@@ -148,3 +149,12 @@ The available feed text is preserved above. Run with `OPENAI_API_KEY` for ground
 
 ## CNBC Writing Style Insight
 Offline mode does not infer newsroom style beyond the supplied text."""
+
+
+def _format_published_at(article: Article) -> str:
+    if article.published_at is None:
+        return "not available"
+    published_at = article.published_at
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+    return published_at.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
